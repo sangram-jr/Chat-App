@@ -6,6 +6,7 @@ interface User{
     room:string
 }
 
+//create a global array where all socket are store
 const totalSocket:User[] = [];
 
 wss.on('connection',(socket)=>{
