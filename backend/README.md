@@ -1,13 +1,23 @@
-what user can send
+# WebSocket Message Protocol
 
-join a room:
+## 📤 Messages Client Can Send
+
+### 1️⃣ Join a Room
+
+Used when a user wants to join a specific chat room.
+
+```json
 {
-   "type": "join",
-   "payload": {
-     "roomId": "123"
-   }
+  "type": "join",
+  "payload": {
+    "roomId": "123"
+  }
 }
-send message:
+
+
+Used to send a message to the current room:
+
+```json
 {
 	"type": "chat",
 	"payload": {
@@ -18,9 +28,10 @@ send message:
 
 
 
-What the server can send/User recieves
+Receive Chat Message:
 
-message:
+
+```json
 {
 	"type": "chat",
 	"payload": {
