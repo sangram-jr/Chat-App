@@ -5,19 +5,29 @@ import './App.css'
 
 function App() {
   
-  const [msg,setMsg]=useState(['hello']);
+  const [msg,setMsg]=useState(['hello from server']);
+  const [roomId,setRoomId]=useState("");
+  const [joined,setJoined]=useState(false);
+
   const wsRef = useRef<WebSocket | null>(null);
   const inputRef=useRef<HTMLInputElement>(null);
 
-   // Send chat message through WebSocket
-  function sendMessege(){
+   // Send user message through WebSocket when user click the send button
+  function sendMessage(){
     const message=inputRef.current?.value;
+    if(!message){
+      return;
+    }
     wsRef.current?.send(JSON.stringify({
       type:"chat",
       payload:{
         message:message
       }
     }))
+    if(inputRef.current){
+       inputRef.current.value="";
+    }
+   
   }
 
   useEffect(()=>{
@@ -30,16 +40,7 @@ function App() {
       setMsg(m=>[...m,event.data]);
     }
 
-    // When connection opens, send join room message
-    ws.onopen=()=>{
-      ws.send(JSON.stringify({ //we need to convert this to string
-        type:"join",
-        payload:{
-          roomId:"red"
-        }
-      }))
-    }
-
+    
     //Store WebSocket connection in ref for later use
     wsRef.current=ws;
 
@@ -50,26 +51,64 @@ function App() {
 
   },[])
 
+
+  //join room function
+  function joinRoom(){
+    if(!roomId){
+      return;
+    }
+    wsRef.current?.send(JSON.stringify({
+      type:"join",
+      payload:{
+        roomId:roomId
+      }
+    }))
+    setJoined(true);
+  };
+
+
   return (
-    <div className='h-screen bg-black flex flex-col justify-between'>
-      {/*message display section*/}
-      <div className='text-amber-50'>
-        {
-          msg.map((m)=><div className='m-8'>
-            <span className='bg-white p-4 rounded text-black'>
-              {m}
-            </span>
-            
-          </div>)
-        }
-      </div>
-      {/*input and send button section*/}
-      <div className='w-full bg-white flex'>
-        <input ref={inputRef} className="flex-1 p-2"></input>
-        <button onClick={sendMessege} className='bg-purple-400 p2 cursor-pointer'>Send</button>
-      </div>
+    <div className="h-screen bg-black text-white flex flex-col justify-center items-center">
+
+      {!joined ? (
+        // Join Room UI
+        <div className="flex flex-col gap-4">
+          <input
+            className="p-2 text-black bg-white"
+            placeholder="Enter Room ID"
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+          />
+          <button
+            onClick={joinRoom}
+            className="bg-purple-500 p-2"
+          >
+            Join Room
+          </button>
+        </div>
+      ) : (
+        // Chat UI
+        <div className="w-full h-full flex flex-col justify-between">
+          <div className="p-4 overflow-y-auto">
+            {msg.map((m, index) => (
+              <div key={index} className="mb-4">
+                <span className="bg-white text-black p-2 rounded">
+                  {m}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex bg-white">
+            <input ref={inputRef} className="flex-1 p-2 text-black" />
+            <button onClick={sendMessage} className="bg-purple-400 p-2">
+              Send
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
 export default App
