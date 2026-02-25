@@ -1,27 +1,41 @@
 import {WebSocketServer,WebSocket} from "ws"
 const wss=new WebSocketServer({port:8080});
 
-let userCount=0;
-const totalSocket:WebSocket[] = [];
+interface User{
+    socket:WebSocket,
+    room:string
+}
+
+const totalSocket:User[] = [];
 
 wss.on('connection',(socket)=>{
-    totalSocket.push(socket);
-    userCount+=1;
-    console.log("User Connected: " + userCount);
-
-    socket.on('message',(msg)=>{ //to send the message to the server
-        console.log(msg.toString());
-
-        //server sent back message to the user(client)
-        //every user can see the msg
-        for(let i=0;i<totalSocket.length;i++){
-            const s=totalSocket[i];
-            if(s){
-                s.send(msg.toString() + ": send from server");
-            }
-            
-        }
-        
-    })
     
+    socket.on('message',(msg:string)=>{
+        //msg that server get from the user, that is string, we need to convert this in a object
+        const parseMessage=JSON.parse(msg );
+
+        //when a user wants to join a room
+        if(parseMessage.type==="join"){
+            totalSocket.push({
+                socket,
+                room:parseMessage.payload.roomId
+            });
+        }
+        //when a user sends a chat message
+        if(parseMessage.type==="chat"){
+            //step 1: find the room
+            let currentUserRoom=null;
+            for(let i=0;i<totalSocket.length;i++){
+                if(totalSocket[i]?.socket===socket){
+                    currentUserRoom=totalSocket[i]?.room;
+                }
+            }
+            //step 2: Broadcast the message to all users in the same room
+            for(let i=0;i<totalSocket.length;i++){
+                if(totalSocket[i]?.room===currentUserRoom){
+                    totalSocket[i]?.socket.send(parseMessage.payload.message);
+                }
+            }
+        }
+    })
 })
